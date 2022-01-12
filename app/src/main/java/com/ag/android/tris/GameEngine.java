@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Random;
 
 public class GameEngine {
-    public static enum Player {
+    public enum Player {
         X,
         O;
 
@@ -17,14 +17,14 @@ public class GameEngine {
         }
     }
 
-    public static enum GameStatus {
+    public enum GameStatus {
         STILL_PLAYING,
         X_WON,
         O_WON,
         DRAW
     }
 
-    private static Random rand = new Random();
+    private static final Random rand = new Random();
 
     private final Player[][] tiles;
     private GameStatus gameStatus;
@@ -57,7 +57,7 @@ public class GameEngine {
         }
 
         gameStatus = GameStatus.STILL_PLAYING;
-        toMove = Player.O;
+        toMove = ( (rand.nextInt(2) == 1) ? Player.O : Player.X );
     }
 
 
@@ -66,6 +66,11 @@ public class GameEngine {
     }
 
     public GameStatus move(Player player, int x, int y) {
+        if (gameStatus != GameStatus.STILL_PLAYING) {
+            //game already finished
+            return null;
+        }
+
         if (toMove != player) {
             //not your turn
             return null;
@@ -91,6 +96,11 @@ public class GameEngine {
     public int[] proposeMove(Player player) {
         if (gameStatus != GameStatus.STILL_PLAYING)
             return null;
+
+        if (toMove != player) {
+            //not my turn
+            return null;
+        }
 
         List<int[]> candidates = listEmpties();
         if (candidates.isEmpty())
@@ -130,16 +140,6 @@ public class GameEngine {
 
 
         //check draw
-        boolean hasEmpties = false;
-        for (int x=0; x < 3; x ++) {
-            for (int y=0; y < 3; y ++) {
-                if (tiles[x][y] == null) {
-                    hasEmpties = true;
-                    break;
-                }
-            }
-        }
-
         if (!hasEmpties())
             gameStatus = GameStatus.DRAW;
     }

@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">Tris</string>
     <string name="cell_content">Cell content</string>
+    <string name="thinking">I\'m thinking...</string>
+    <string name="you_won">You won!</string>
+    <string name="i_won">I won!!!</string>
+    <string name="restart">Restart game</string>
+    <string name="draw">It\'s a draw.</string>
+    <string name="your_turn">Your turn</string>
+    <string name="my_turn">My turn</string>
 </resources>

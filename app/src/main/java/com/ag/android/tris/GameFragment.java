@@ -7,9 +7,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,12 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameFragment extends Fragment {
-    private static final long COMPUTER_MOVE_DELAY = 3000;
+    private static final long COMPUTER_MOVE_DELAY = 1500;
 
     private GameEngine mGame;
-    private GameEngine.Player humanPlayer;
+    private GameEngine.Player mHumanPlayer = GameEngine.Player.O;
 
+    private TextView mMessageView;
     private GridView mGridView;
+    private Button mRestartButton;
+
 
     public static GameFragment newInstance() {
         return new GameFragment();
@@ -33,9 +37,6 @@ public class GameFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        mGame = new GameEngine();
-        humanPlayer = mGame.getToMove();
     }
 
 
@@ -44,6 +45,10 @@ public class GameFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_game, container, false);
 
+        mMessageView = v.findViewById(R.id.message);
+        mRestartButton = v.findViewById(R.id.button_restart);
+        mRestartButton.setOnClickListener(view -> startGame());
+
         mGridView = v.findViewById(R.id.gridview);
         mGridView.setAdapter(new GridAdapter(getActivity()));
 
@@ -51,28 +56,44 @@ public class GameFragment extends Fragment {
             int y = position / 3;
             int x = position - (y*3);
 
-            GameEngine.GameStatus newStatus = mGame.move(humanPlayer, x, y);
+            GameEngine.GameStatus newStatus = mGame.move(mHumanPlayer, x, y);
             if (newStatus != null) {
                 updateGridView();
 
                 if (newStatus == GameEngine.GameStatus.STILL_PLAYING) {
-                    Toast.makeText(getActivity(), "I'm thinking...", Toast.LENGTH_SHORT).show();
-
-                    final Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        GameEngine.Player computerPlayer = humanPlayer.otherPlayer();
-                        int[] computerMove = mGame.proposeMove(computerPlayer);
-                        if (computerMove != null) {
-                            GameEngine.GameStatus newStatus1 = mGame.move(computerPlayer, computerMove);
-                            if (newStatus1 != null)
-                                updateGridView();
-                        }
-                    }, COMPUTER_MOVE_DELAY);
+                    makeComputerMove();
                 }
 
             }
         });
+
+        startGame();
+
         return v;
+    }
+
+    private void startGame() {
+        mGame = new GameEngine();
+        updateGridView();
+
+        if (mGame.getToMove() != mHumanPlayer)
+            makeComputerMove();
+    }
+
+    private void makeComputerMove() {
+        mMessageView.setText(R.string.thinking);
+
+        final Handler handler = new Handler();
+        handler.postDelayed(() -> {
+            GameEngine.Player computerPlayer = mHumanPlayer.otherPlayer();
+            int[] computerMove = mGame.proposeMove(computerPlayer);
+            if (computerMove != null) {
+                GameEngine.GameStatus newStatus1 = mGame.move(computerPlayer, computerMove);
+                if (newStatus1 != null) {
+                    updateGridView();
+                }
+            }
+        }, COMPUTER_MOVE_DELAY);
     }
 
     private void updateGridView() {
@@ -80,12 +101,18 @@ public class GameFragment extends Fragment {
         gridAdapter.setTiles(mGame.getTiles());
         gridAdapter.notifyDataSetChanged();
 
-        //TODO: check other statuses and give visual feedback
-        if (mGame.getStatus() == GameEngine.playerWon(humanPlayer))
-            Toast.makeText(getActivity(), "You won!", Toast.LENGTH_LONG).show();
-
-        if (mGame.getStatus() == GameEngine.playerWon(humanPlayer.otherPlayer()))
-            Toast.makeText(getActivity(), "I won!!!", Toast.LENGTH_LONG).show();
+        if (mGame.getStatus() == GameEngine.playerWon(mHumanPlayer)) {
+            mMessageView.setText(R.string.you_won);
+        } else if (mGame.getStatus() == GameEngine.playerWon(mHumanPlayer.otherPlayer())) {
+            mMessageView.setText(R.string.i_won);
+        } else if (mGame.getStatus() == GameEngine.GameStatus.DRAW) {
+            mMessageView.setText(R.string.draw);
+        } else {
+            if (mGame.getToMove() == mHumanPlayer)
+                mMessageView.setText(R.string.your_turn);
+            else
+                mMessageView.setText(R.string.my_turn); //should never happen, "I'm thinking" should be triggered instead
+        }
     }
 
 
