@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Tris</string>
+    <string name="cell_content">Cell content</string>
+</resources>
